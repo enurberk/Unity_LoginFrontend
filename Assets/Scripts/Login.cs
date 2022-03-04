@@ -46,7 +46,12 @@ public class Login : MonoBehaviour
             yield break;
         }
 
-        UnityWebRequest request = UnityWebRequest.Get($"{ authenticationEndpoint}?rUsername={username}&rPassword={password}");
+        WWWForm form = new WWWForm();
+        form.AddField("rUsername", username);
+        form.AddField("rPassword", password);
+
+
+        UnityWebRequest request = UnityWebRequest.Post(authenticationEndpoint, form);
         var handler = request.SendWebRequest();
         Debug.Log($"{username} : {password}");
 
