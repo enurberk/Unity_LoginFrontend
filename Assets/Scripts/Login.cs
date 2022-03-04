@@ -8,12 +8,16 @@ using TMPro;
 public class Login : MonoBehaviour
 {
     [SerializeField]
-    private string authenticationEndpoint = "http://127.0.0.1:13756/account";
+    private string loginEndpoint = "http://127.0.0.1:13756/account/login";
+    [SerializeField]
+    private string createEndpoint = "http://127.0.0.1:13756/account/create";
 
     [SerializeField]
     private TextMeshProUGUI alertText;
     [SerializeField]
     private Button loginButton;
+    [SerializeField]
+    private Button createButton;
     [SerializeField]
     private TMP_InputField usernameInputField;
     [SerializeField]
@@ -22,9 +26,17 @@ public class Login : MonoBehaviour
     public void OnLoginClick()
     {
         alertText.text = "Signing in...";
-        loginButton.interactable = false;
+        ActivateButtons(false);
 
         StartCoroutine(TryLogin());
+    }
+
+    public void OnCreateClick()
+    {
+        alertText.text = "Creating new account...";
+        ActivateButtons(false);
+
+        StartCoroutine(TryCreate());
     }
 
     private IEnumerator TryLogin()
@@ -51,9 +63,8 @@ public class Login : MonoBehaviour
         form.AddField("rPassword", password);
 
 
-        UnityWebRequest request = UnityWebRequest.Post(authenticationEndpoint, form);
+        UnityWebRequest request = UnityWebRequest.Post(loginEndpoint, form);
         var handler = request.SendWebRequest();
-        Debug.Log($"{username} : {password}");
 
         float startTime = 0.0f;
         while (!handler.isDone)
@@ -72,14 +83,77 @@ public class Login : MonoBehaviour
         {
             if(request.downloadHandler.text != "Invalid credentials") // login check
             {
-                loginButton.interactable = false;
+                ActivateButtons(false);
                 GameAccount returnedAccount = JsonUtility.FromJson<GameAccount>(request.downloadHandler.text);
                 alertText.text = "Welcome! " + returnedAccount.username + ((returnedAccount.adminFlag == 1) ? " Admin" : "");
             }
             else
             {
                 alertText.text = "Invalid credentials...";
-                loginButton.interactable = true;
+                ActivateButtons(true);
+            }
+        }
+        else
+        {
+            alertText.text = "Error connecting to the server...";
+            //Debug.Log("Unable to connect to the server...");
+            ActivateButtons(true);
+        }
+
+
+        yield return null;
+    }
+
+    private IEnumerator TryCreate()
+    {
+        string username = usernameInputField.text;
+        string password = passwordInputField.text;
+
+        if (username.Length < 3 || username.Length > 24)
+        {
+            alertText.text = "Invalid username...";
+            ActivateButtons(true);
+            yield break;
+        }
+
+        if (password.Length < 3 || password.Length > 24)
+        {
+            alertText.text = "Invalid password...";
+            ActivateButtons(true);
+            yield break;
+        }
+
+        WWWForm form = new WWWForm();
+        form.AddField("rUsername", username);
+        form.AddField("rPassword", password);
+
+
+        UnityWebRequest request = UnityWebRequest.Post(createEndpoint, form);
+        var handler = request.SendWebRequest();
+
+        float startTime = 0.0f;
+        while (!handler.isDone)
+        {
+            startTime += Time.deltaTime;
+
+            if (startTime > 10.0f)
+            {
+                break;
+            }
+
+            yield return null;
+        }
+
+        if (request.result == UnityWebRequest.Result.Success)
+        {
+            if (request.downloadHandler.text != "Invalid credentials" && request.downloadHandler.text != "Username is already taken!") // create check
+            {
+                GameAccount returnedAccount = JsonUtility.FromJson<GameAccount>(request.downloadHandler.text);
+                alertText.text = "Account has been created!";
+            }
+            else
+            {
+                alertText.text = "Username is already taken!";
             }
         }
         else
@@ -89,7 +163,13 @@ public class Login : MonoBehaviour
             loginButton.interactable = true;
         }
 
-
+        ActivateButtons(true);
         yield return null;
+    }
+
+    private void ActivateButtons(bool toggle)
+    {
+        loginButton.interactable = toggle;
+        createButton.interactable = toggle;
     }
 }
