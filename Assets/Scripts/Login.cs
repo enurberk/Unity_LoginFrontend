@@ -47,14 +47,14 @@ public class Login : MonoBehaviour
         if (username.Length < 3 || username.Length > 24)
         {
             alertText.text = "Invalid username...";
-            loginButton.interactable = true;
+            ActivateButtons(true);
             yield break;
         }
 
         if (password.Length < 3 || password.Length > 24)
         {
             alertText.text = "Invalid password...";
-            loginButton.interactable = true;
+            ActivateButtons(true);
             yield break;
         }
 
@@ -160,7 +160,7 @@ public class Login : MonoBehaviour
         {
             alertText.text = "Error connecting to the server...";
             //Debug.Log("Unable to connect to the server...");
-            loginButton.interactable = true;
+            ActivateButtons(true);
         }
 
         ActivateButtons(true);
